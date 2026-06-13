@@ -2,6 +2,17 @@
 name: falao-qiepian
 description: 直播切片全流程自动化工具。输入直播回放视频，自动转录→分析→切片→花字→多机位→产品弹窗→音效→去重→输出成品。适用：女装/服装直播切片、带货视频二创。
 version: 1.0
+homepage: https://github.com/falaoai/falao-qiepian
+metadata:
+  requires:
+    - ffmpeg
+    - python >= 3.10
+    - Pillow (pip install Pillow)
+    - openai-whisper (pip install openai-whisper)
+    - Node.js 18+
+    - Chrome/Chromium
+  optional:
+    - HyperFrames (首次使用时 npm install hyperframes)
 ---
 
 # 直播切片 Skill
@@ -20,13 +31,15 @@ version: 1.0
 - HyperFrames (npm 包，`npx hyperframes`)
 - Chrome/Chromium (HyperFrames 渲染引擎)
 
-首次使用检查：
+首次使用务必检查依赖：
 ```bash
-ffmpeg -version
-python -c "from PIL import Image; print('ok')"
-python -m whisper --help | head -1
-cd <slot_dir> && npx hyperframes --version
+ffmpeg -version                         # 必须
+python -c "from PIL import Image"       # 必须，缺则 pip install Pillow
+python -m whisper --help | head -1      # 必须，缺则 pip install openai-whisper
+node --version                          # 必须，>= 18
+"/c/Program Files/Google/Chrome/Application/chrome.exe" --version  # 必须
 ```
+HyperFrames 会在第一次跑花字步骤时自动 npm install，无需提前安装。
 
 ## 完整流水线
 
