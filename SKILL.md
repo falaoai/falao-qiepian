@@ -1,7 +1,7 @@
 ---
 name: falao-qiepian
 description: 直播切片全流程自动化工具。输入直播回放视频，自动转录→分析→切片→花字→多机位→产品弹窗→音效→去重→输出成品。适用：女装/服装直播切片、带货视频二创。
-version: 1.1
+version: 1.2
 homepage: https://github.com/falaoai/falao-qiepian
 metadata:
   requires:
@@ -127,6 +127,14 @@ npm init -y && npm install hyperframes
 
 # 6.3 渲染
 npx hyperframes lint . && npx hyperframes render . -o render.webm --format webm
+
+# 6.4 验证渲染结果（关键！没字幕 90% 是这个原因）
+ls -lh render.webm
+ffprobe -v error -show_entries stream=codec_name,width,height edit/animations/slot_1/render.webm
+# ⚠️ 如果 render.webm < 50KB，说明渲染失败：
+#   1. 检查 GSAP CDN：curl -I https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js
+#   2. CDN 挂了就换本地：npm install gsap，改 HTML src 为 ./node_modules/gsap/dist/gsap.min.js
+#   3. 重新渲染
 ```
 
 ### 第 7 步：产品截图弹窗
@@ -186,7 +194,8 @@ ffmpeg -y \
   -i edit/product_circle.png \     # 产品图
   -i edit/pop.wav \                # 音效
   -filter_complex "
-    [1:v]colorkey=0x000000:0.3:0.1[huazi];
+    # similarity=0.5 更宽容，避免背景不是纯黑时抠不干净导致字幕消失
+    [1:v]colorkey=0x000000:0.5:0.2[huazi];
     [0:v][huazi]overlay=0:0[base];
     [base][2:v]overlay=60:(H-h)/2:enable='between(t,4.0,6.5)'[v];
     [3:a]adelay=4050|4050|9000|9000|27650|27650,volume=0.5[pops];
@@ -312,12 +321,16 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 <meta charset="UTF-8">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background: transparent; overflow: hidden; }
+  /* 必须用纯黑背景！transparent 在 HyperFrames 渲染时经常失效，
+     导致背景不是 #000000，colorkey 抠不干净，字幕直接消失 */
+  body { background: #000000; overflow: hidden; }
 </style>
 </head>
 <body>
+<!-- data-width / data-height 必须从原视频动态读取，不能硬编码！
+     先用 ffprobe 获取，再写入 HTML -->
 <div id="root" class="clip" data-composition-id="huazi" data-start="0" data-duration="28"
-  data-width="1080" data-height="1920" data-track-index="0">
+  data-width="{{VIDEO_WIDTH}}" data-height="{{VIDEO_HEIGHT}}" data-track-index="0">
 
   <!-- 底部字幕（track 0）：弹跳/弹性轮换 -->
   <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
@@ -343,6 +356,13 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
 (function(){
+  // 错误保护：如果 GSAP 加载失败，至少让字幕直接显示
+  window.addEventListener('error', function(e){
+    console.error('JS Error:', e.message);
+    // 兜底：直接显示所有字幕元素
+    document.querySelectorAll('.kd').forEach(function(el){ el.style.opacity = 1; el.style.transform = 'none'; });
+  });
+
   window.__timelines = window.__timelines || {};
   var tl = gsap.timeline();
 
