@@ -1,7 +1,7 @@
 ---
 name: falao-qiepian
 description: 直播切片全流程自动化工具。输入直播回放视频，自动转录→分析→切片→花字→多机位→产品弹窗→音效→去重→输出成品。适用：女装/服装直播切片、带货视频二创。
-version: 1.2
+version: 1.3
 homepage: https://github.com/falaoai/falao-qiepian
 metadata:
   requires:
@@ -258,7 +258,7 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   <!-- 底部字幕 Slot：弹跳/弹性轮换 -->
   <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
     style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
-    <div id="b1-t" style="font:bold 46px 'Microsoft YaHei',sans-serif;color:white;
+    <div id="b1-t" style="font-weight:bold;font-size:50px;font-family:'Microsoft YaHei',sans-serif;color:white;
       -webkit-text-stroke: 1px rgba(0,0,0,0.6);
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
       95%棉 + 5%氨纶
@@ -284,11 +284,11 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   <div id="s1" class="clip" data-start="3.8" data-duration="2.5" data-track-index="1"
     style="position:absolute;left:50px;top:880px;">
     <div id="s1-t" style="display:inline-flex;gap:2px;align-items:baseline;flex-wrap:nowrap;">
-      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FFD700;opacity:0;">95%</span>
-      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#ffffff;opacity:0;margin-left:2px;">棉</span>
-      <span class="kd" style="font:300 15px 'Microsoft YaHei';color:#666;opacity:0;margin:0 4px;">+</span>
-      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FF6B9D;opacity:0;">5%</span>
-      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#ffffff;opacity:0;">氨纶</span>
+      <span class="kd" style="font-weight:900;font-size:24px;font-family:'Microsoft YaHei',sans-serif;color:#FFD700;opacity:0;">95%</span>
+      <span class="kd" style="font-weight:900;font-size:26px;font-family:'Microsoft YaHei',sans-serif;color:#ffffff;opacity:0;margin-left:3px;">棉</span>
+      <span class="kd" style="font-weight:300;font-size:18px;font-family:'Microsoft YaHei',sans-serif;color:#888;opacity:0;margin:0 5px;">+</span>
+      <span class="kd" style="font-weight:900;font-size:24px;font-family:'Microsoft YaHei',sans-serif;color:#FF6B9D;opacity:0;">5%</span>
+      <span class="kd" style="font-weight:900;font-size:26px;font-family:'Microsoft YaHei',sans-serif;color:#ffffff;opacity:0;">氨纶</span>
     </div>
     <div id="s1-line" style="height:1px;width:0;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin-top:5px;"></div>
   </div>
@@ -335,7 +335,7 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   <!-- 底部字幕（track 0）：弹跳/弹性轮换 -->
   <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
     style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
-    <div id="b1-t" style="font:bold 46px 'Microsoft YaHei',sans-serif;color:white;
+    <div id="b1-t" style="font-weight:bold;font-size:50px;font-family:'Microsoft YaHei',sans-serif;color:white;
       -webkit-text-stroke: 1px rgba(0,0,0,0.6);
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
       95%棉 + 5%氨纶
@@ -345,9 +345,9 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   <!-- 左侧重点词（track 1）：极简逐显 -->
   <div id="s1" class="clip" data-start="3.8" data-duration="2.5" data-track-index="1"
     style="position:absolute;left:50px;top:880px;">
-    <div id="s1-t" style="display:inline-flex;gap:2px;align-items:baseline;">
-      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FFD700;opacity:0;">95%</span>
-      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#fff;opacity:0;">棉</span>
+    <div id="s1-t" style="display:inline-flex;gap:3px;align-items:baseline;">
+      <span class="kd" style="font-weight:900;font-size:24px;font-family:'Microsoft YaHei',sans-serif;color:#FFD700;opacity:0;">95%</span>
+      <span class="kd" style="font-weight:900;font-size:26px;font-family:'Microsoft YaHei',sans-serif;color:#ffffff;opacity:0;margin-left:3px;">棉</span>
     </div>
     <div id="s1-line" style="height:1px;width:0;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin-top:5px;"></div>
   </div>
@@ -386,11 +386,13 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 ```
 
 花字配色（两种共用）：
-- 数字/百分比：金色 #FFD700，font:900 20px
-- 中文材质名：白色 #ffffff，font:900 17px  
-- 连接符/标点：深灰 #666，font:300 15px
-- 强调词：粉色 #FF6B9D，font:900 20px
-- 底部字幕描边：`-webkit-text-stroke: 1px rgba(0,0,0,0.6)` + `text-shadow: 0 2px 4px rgba(0,0,0,0.5)`（简洁黑色描边，不用红色光晕）
+- 数字/百分比：金色 #FFD700，font-weight:900; font-size:24px
+- 中文材质名：白色 #ffffff，font-weight:900; font-size:26px
+- 连接符/标点：深灰 #888，font-weight:300; font-size:18px
+- 强调词（促单/价格）：粉色 #FF6B9D，font-weight:900; font-size:26px
+- 底部字幕：font-weight:bold; font-size:50px
+- ⚠️ 字体必须分拼写（font-weight / font-size / font-family），不要用 `font:` 简写，避免解析异常
+- 底部字幕描边：`-webkit-text-stroke: 1px rgba(0,0,0,0.6)` + `text-shadow: 0 2px 4px rgba(0,0,0,0.5)`
 - 左侧重点词底部金线：linear-gradient(transparent, #FFD700, transparent)
 
 ## 去重手段汇总
