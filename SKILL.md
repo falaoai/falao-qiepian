@@ -1,7 +1,7 @@
 ---
 name: falao-qiepian
 description: 直播切片全流程自动化工具。输入直播回放视频，自动转录→分析→切片→花字→多机位→产品弹窗→音效→去重→输出成品。适用：女装/服装直播切片、带货视频二创。
-version: 1.0
+version: 1.1
 homepage: https://github.com/falaoai/falao-qiepian
 metadata:
   requires:
@@ -61,9 +61,11 @@ python -m whisper edit/audio.wav --model small --language zh --output_format jso
 
 输出：`edit/audio.json`（带词级时间戳）
 
-### 第 3 步：LLM 分析选段
+### 第 3 步：LLM 分析选段 + 提取重点词时间戳
 
-读取 `edit/audio.json`，识别高价值片段。女装直播识别维度：
+读取 `edit/audio.json`，完成两件事：
+
+**① 选高价值片段**（用于切片截取）
 
 | 类型 | 关键词信号 | 价值 |
 |------|-----------|------|
@@ -71,11 +73,21 @@ python -m whisper edit/audio.wav --model small --language zh --output_format jso
 | 上身效果 | 穿起来/上身/给你们看 | 最高 |
 | 面料卖点 | 面料/材质/纯棉/真丝 | 高 |
 | 价格亮点 | 价格/只要/划算/才 | 最高 |
-| 尺码建议 | 尺码/均码/S/M/L | 中 |
 | 促单话术 | 链接/下单/橱窗/库存 | 最高 |
-| 互动节点 | 姐妹/宝宝们/有没有 | 中 |
 
-输出：选定片段的起止时间、内容描述、产品类型（上衣/裤子/裙子/面料）
+**② 提取重点词时间戳**（用于花字定位）
+
+从选定片段的转录文本中，提取 3-7 个重点词，每个词输出：
+```
+词: "95%棉"
+开始时间: 3.8s（用 whisper segment 的 start）
+结束时间: 6.5s
+位置: 左侧中间          ← 固定：画面左半区，垂直居中
+```
+
+重点词选取优先级：面料成分 > 支数/品质 > 价格 > 促单口号 > 上身效果
+
+输出：选定片段的起止时间 + 重点词列表（词/开始时间/结束时间）
 
 ### 第 4 步：基础切片
 
@@ -220,22 +232,107 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 
 ## 花字模板（HyperFrames）
 
-结构：`<composition-id>`, `data-start`, `data-duration`, `data-track-index`
+**两种花字并存**，分别打在不同位置：
+
+| 类型 | 位置 | 效果 | 用途 |
+|------|------|------|------|
+| 底部字幕 | bottom:240-280px, 居中 | 弹跳/弹性/滑入轮换 | 主播整句旁白 |
+| 左侧重点词 | left:50px, top:800-1000px（主播左中） | 极简逐显（字依次淡入上滑+金线） | 主播说的核心卖点词 |
+
+---
+
+### 底部字幕模板（不变，沿用 v1.0 风格）
 
 ```html
-<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>
-<div id="root" class="clip" data-composition-id="huazi" data-start="0" data-duration="30.4"
+  <!-- 底部字幕 Slot：弹跳/弹性轮换 -->
+  <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
+    style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
+    <div id="b1-t" style="font:bold 48px 'Microsoft YaHei',sans-serif;color:white;
+      text-shadow: 0 0 0 5px #D4537E, 0 0 0 7px rgba(0,0,0,0.35);">
+      95%棉 + 5%氨纶
+    </div>
+  </div>
+```
+
+底部字幕动画轮换（避免重复感）：
+```js
+  tl.from("#b1-t", {y:30, opacity:0, duration:0.35, ease:"back.out(1.7)"}, 0.0);   // 弹跳
+  tl.from("#b2-t", {scale:0.3, opacity:0, duration:0.45, ease:"elastic.out(1,0.4)"}, 4.08); // 弹性
+  tl.from("#b3-t", {x:-40, opacity:0, duration:0.35, ease:"power2.out"}, 9.3);        // 滑入
+```
+
+---
+
+### 左侧重点词模板（极简逐显，v1.1 新增）
+
+**定位**：主播左侧中间，文字左对齐（不居中）
+
+```html
+  <!-- 重点词：面料成分（主播左侧中间，极简逐显） -->
+  <div id="s1" class="clip" data-start="3.8" data-duration="2.5" data-track-index="1"
+    style="position:absolute;left:50px;top:880px;">
+    <div id="s1-t" style="display:inline-flex;gap:2px;align-items:baseline;flex-wrap:nowrap;">
+      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FFD700;opacity:0;">95%</span>
+      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#ffffff;opacity:0;margin-left:2px;">棉</span>
+      <span class="kd" style="font:300 15px 'Microsoft YaHei';color:#666;opacity:0;margin:0 4px;">+</span>
+      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FF6B9D;opacity:0;">5%</span>
+      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#ffffff;opacity:0;">氨纶</span>
+    </div>
+    <div id="s1-line" style="height:1px;width:0;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin-top:5px;"></div>
+  </div>
+```
+
+**极简逐显 JS**（每个字依次淡入上滑 + 底部金线展开）：
+```js
+  // 对所有重点词 slot 执行
+  ['s1','s2','s3','s4','s5'].forEach(function(id){
+    var chars = document.querySelectorAll('#' + id + ' .kd');
+    var line = document.getElementById(id + '-line');
+    var startTime = parseFloat(document.getElementById(id).dataset.start);
+
+    chars.forEach(function(ch, i){
+      tl.to(ch, { opacity:1, y:0, duration:0.18, ease:"power2.out" }, startTime + i * 0.08);
+    });
+    tl.to(line, { width:'100%', duration:0.4, ease:"power2.out" }, startTime + chars.length * 0.08);
+    tl.to('#' + id, { opacity:0, duration:0.25, ease:"power2.in" }, startTime + 2.0);
+  });
+```
+
+---
+
+### 完整 index.html 结构（底部 + 左侧重点词并存）
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: transparent; overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="root" class="clip" data-composition-id="huazi" data-start="0" data-duration="28"
   data-width="1080" data-height="1920" data-track-index="0">
 
-  <div id="s1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="1"
-    style="position:absolute;bottom:260px;left:0;right:0;display:flex;justify-content:center;">
-    <div id="s1-t" style="font:bold 48px Microsoft YaHei;color:white;
-      text-shadow:0 0 0 5px #D4537E,0 0 0 7px rgba(0,0,0,0.4);">
-      <span style="color:#FFD700;">95%棉</span> + <span style="color:#FF6B9D;">5%氨纶</span>
+  <!-- 底部字幕（track 0）：弹跳/弹性轮换 -->
+  <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
+    style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
+    <div id="b1-t" style="font:bold 48px 'Microsoft YaHei';color:white;text-shadow:0 0 0 5px #D4537E,0 0 0 7px rgba(0,0,0,0.35);">
+      95%棉 + 5%氨纶
     </div>
   </div>
 
-  <!-- ... 更多字幕片段 ... -->
+  <!-- 左侧重点词（track 1）：极简逐显 -->
+  <div id="s1" class="clip" data-start="3.8" data-duration="2.5" data-track-index="1"
+    style="position:absolute;left:50px;top:880px;">
+    <div id="s1-t" style="display:inline-flex;gap:2px;align-items:baseline;">
+      <span class="kd" style="font:900 20px 'Microsoft YaHei';color:#FFD700;opacity:0;">95%</span>
+      <span class="kd" style="font:900 17px 'Microsoft YaHei';color:#fff;opacity:0;">棉</span>
+    </div>
+    <div id="s1-line" style="height:1px;width:0;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin-top:5px;"></div>
+  </div>
 
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -243,20 +340,32 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 (function(){
   window.__timelines = window.__timelines || {};
   var tl = gsap.timeline();
-  // 弹跳入场
-  tl.from("#s1-t",{y:30,opacity:0,duration:0.35,ease:"back.out(1.7)"},0.0);
-  // 弹性缩放
-  tl.from("#s2-t",{scale:0.3,opacity:0,duration:0.45,ease:"elastic.out(1,0.4)"},4.08);
+
+  // 底部字幕：弹跳入场
+  tl.from("#b1-t", {y:30,opacity:0,duration:0.35,ease:"back.out(1.7)"}, 0.0);
+
+  // 左侧重点词：极简逐显
+  var chars = document.querySelectorAll('#s1 .kd');
+  chars.forEach(function(ch,i){
+    tl.to(ch, {opacity:1,y:0,duration:0.18,ease:"power2.out"}, 3.8 + i*0.08);
+  });
+  tl.to('#s1-line', {width:'100%',duration:0.4,ease:"power2.out"}, 3.8 + chars.length*0.08);
+  tl.to('#s1', {opacity:0,duration:0.25}, 5.8);
+
   window.__timelines["huazi"] = tl;
 })();
-</script></body></html>
+</script>
+</body>
+</html>
 ```
 
-花字配色建议：
-- 常规：白字 + 粉描边（#D4537E）
-- 强调（价格/面料/数字）：金字（#FFD700）+ 红底描边
-- 促单：大红（#E24B4A）+ 金色外发光
-- 入场动画不重复：`back.out`, `elastic.out`, `power2.out` 轮换
+花字配色（两种共用）：
+- 数字/百分比：金色 #FFD700，font:900 20px
+- 中文材质名：白色 #ffffff，font:900 17px  
+- 连接符/标点：深灰 #666，font:300 15px
+- 强调词：粉色 #FF6B9D，font:900 20px
+- 底部字幕描边：粉 #D4537E + 黑阴影
+- 左侧重点词底部金线：linear-gradient(transparent, #FFD700, transparent)
 
 ## 去重手段汇总
 
