@@ -241,14 +241,17 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 
 ---
 
-### 底部字幕模板（不变，沿用 v1.0 风格）
+### 底部字幕模板（弹跳/弹性/滑入轮换）
+
+**注意**：text-shadow 用简洁黑色描边，不要用红色大光晕，避免"红色乱七八糟"。
 
 ```html
   <!-- 底部字幕 Slot：弹跳/弹性轮换 -->
   <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
     style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
-    <div id="b1-t" style="font:bold 48px 'Microsoft YaHei',sans-serif;color:white;
-      text-shadow: 0 0 0 5px #D4537E, 0 0 0 7px rgba(0,0,0,0.35);">
+    <div id="b1-t" style="font:bold 46px 'Microsoft YaHei',sans-serif;color:white;
+      -webkit-text-stroke: 1px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
       95%棉 + 5%氨纶
     </div>
   </div>
@@ -319,7 +322,9 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   <!-- 底部字幕（track 0）：弹跳/弹性轮换 -->
   <div id="b1" class="clip" data-start="0.0" data-duration="2.5" data-track-index="0"
     style="position:absolute;bottom:280px;left:0;right:0;display:flex;justify-content:center;">
-    <div id="b1-t" style="font:bold 48px 'Microsoft YaHei';color:white;text-shadow:0 0 0 5px #D4537E,0 0 0 7px rgba(0,0,0,0.35);">
+    <div id="b1-t" style="font:bold 46px 'Microsoft YaHei',sans-serif;color:white;
+      -webkit-text-stroke: 1px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
       95%棉 + 5%氨纶
     </div>
   </div>
@@ -344,13 +349,14 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
   // 底部字幕：弹跳入场
   tl.from("#b1-t", {y:30,opacity:0,duration:0.35,ease:"back.out(1.7)"}, 0.0);
 
-  // 左侧重点词：极简逐显
+  // 左侧重点词：极简逐显（先 set 初始 y:15+opacity:0，再 to y:0+opacity:1，才有上滑效果）
   var chars = document.querySelectorAll('#s1 .kd');
+  chars.forEach(function(ch){ gsap.set(ch, {y:15, opacity:0}); });  // ← 关键：先设初始状态
   chars.forEach(function(ch,i){
-    tl.to(ch, {opacity:1,y:0,duration:0.18,ease:"power2.out"}, 3.8 + i*0.08);
+    tl.to(ch, {opacity:1, y:0, duration:0.22, ease:"power2.out"}, 3.8 + i*0.09);
   });
-  tl.to('#s1-line', {width:'100%',duration:0.4,ease:"power2.out"}, 3.8 + chars.length*0.08);
-  tl.to('#s1', {opacity:0,duration:0.25}, 5.8);
+  tl.to('#s1-line', {width:'100%',duration:0.4,ease:"power2.out"}, 3.8 + chars.length*0.09);
+  tl.to('#s1', {opacity:0,duration:0.3}, 5.6);
 
   window.__timelines["huazi"] = tl;
 })();
@@ -364,7 +370,7 @@ filt = ';'.join(parts) + ';' + xfade_chain + f'{a_pads}concat=n={len(segs)}:v=0:
 - 中文材质名：白色 #ffffff，font:900 17px  
 - 连接符/标点：深灰 #666，font:300 15px
 - 强调词：粉色 #FF6B9D，font:900 20px
-- 底部字幕描边：粉 #D4537E + 黑阴影
+- 底部字幕描边：`-webkit-text-stroke: 1px rgba(0,0,0,0.6)` + `text-shadow: 0 2px 4px rgba(0,0,0,0.5)`（简洁黑色描边，不用红色光晕）
 - 左侧重点词底部金线：linear-gradient(transparent, #FFD700, transparent)
 
 ## 去重手段汇总
